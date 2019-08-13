@@ -1,0 +1,164 @@
+% Template for ICASSP-2018 paper; to be used with:
+ %          spconf.sty  - ICASSP/ICIP LaTeX style file, and
+ %          IEEEbib.bst - IEEE bibliography style file.
+ % --------------------------------------------------------------------------
+ \documentclass{article}
+ \usepackage{spconf,amsmath,graphicx,euler,amsbsy}
+ %\usepackage[mathscr]{eucal}
+ % Commande de correc à affiner
+ \newcommand{\rev}[1]{{\color{black}#1}}
+ \newcommand{\modif}[1]{{\color{black}#1}}
+ \newcommand{\modifR}[1]{{\color{black}#1}}
+ \newcommand{\revv}[1]{{\color{black}#1}}
+ % Example definitions.
+ % --------------------
+ % utils
+ \def\F{{\mathcal F}}
+ % list of tensor used  in text
+ \def\tA{\boldsymbol{{\mathscr A}}}
+ \def\X{\boldsymbol{{\mathscr X}}}
+ \def\G{\boldsymbol{{\mathscr G}}}
+ \def\C{\boldsymbol{{\mathscr C}}}
+ % list of matrix used in text
+ \def\A{{\mathbf A}}
+ \def\B{{\mathbf B}}
+% Title.
+% ------
+\title{PAPER SKELETON}
+%
+% Single address.
+% ---------------
+\name{Author(s) Name(s)\thanks{Thanks to DAISY Normandy region for funding.}}
+\address{Author Affiliation(s)}
+%
+% For example:
+% ------------
+%\address{School\\
+%	Department\\
+%	Address}
+%
+ % Two addresses (uncomment and modify for two-address case).
+ % ----------------------------------------------------------
+ %\twoauthors
+ %  {A. Author-one, B. Author-two\sthanks{Thanks to XYZ agency for funding.}}
+ %	{School A-B\\
+ %	Department A-B\\
+ %	Address A-B}
+ %  {C. Author-three, D. Author-four\sthanks{The fourth author performed the work
+ %	while at ...}}
+ %	{School C-D\\
+ %	Department C-D\\
+ %	Address C-D}
+ %
+ \begin{document}
+ %\ninept
+ %
+ \maketitle
+ %
+ \begin{abstract}
+We propose a new framework NNT2D which aims to learn dictionaries from Tucker2 decomposition of a third order tensor with positivity constraints. Our approach differs from the existing ones in the way that we enforce sparsity while parallelizing each step of the algorithm.
+ \end{abstract}
+ %
+ \begin{keywords}
+ Tucker2, tensors, multi-modality, dictionary
+ \end{keywords}
+ %
+ \section{Introduction}
+ \label{sec:intro}
+ 
+ 
+ 
+ \section{Tensor and multilinear algebra basics}
+ \subsection{Definitions and Notations}
+ \label{ssec:notation}
+ 
+ A tensor is a multidimensional  array defined on the outer product of a certain number of vector spaces, the number of vector spaces involved in its definition being the order of the tensor. In the sequel, we adopt the following notations:\\
+ the tensors  are denoted by boldface Euler script letters, e.g., $\tA$. The entries of a N-order tensor $\X\in\mathbb{R}^{I_{1}\times..\times I_{N}}$ are denoted by $\X_{i_{1},..,i_{N}}$ and the mode-n $(1\leq n\leq N)$ matricized form denoted by $\X^{(n)}$ is a matrix in $\mathbb{R}^{I_{n}\times \prod_{k\neq n}I_{k}}$ defined (according to the reverse lexicographical order) by: $\X^{(n)}_{i,j}=\X_{i_{1},..,i_{N}}$ with $j=1+\sum^{I_{n}}_{k=1,k\neq n}\prod^{k-1}_{k\neq n}I_{k}$.
+ Vectors are denoted by boldface lowercase letters, e.g., $\mathbf{a}$. Matrices are denoted by boldface capital letters, e.g., $\A$.
+ Scalars are denoted by lowercase letters, e.g., $a$. We define a set $\mathcal{D}_{M,N}$ by: $\mathcal{D}_{M,N}=\left\{\A\in\mathbb{R}^{M\times N}| \A_{m,n}\geq 0, \|A_{:,n}\|^{2}=1 \right\}$. The vectorization operator is denoted  $\textbf{Vec}$. It is defined for matrix by stacking the rows, i.e, for $\A\in\mathbb{R}^{N\times M}, \textbf{Vec}(\A)=[\A_{1,:},...,\A_{N,:}]\in\mathbb{R}^{NM\times 1}$ and for a three-order tensor $\X\in\mathbb{R^{K\times I_{1}\times I_{2}}}$ by stacking the fibers,i.e:\\
+ $\textbf{Vec}(\X)=[\textbf{Vec}(\X_{k,:,:}),...,\textbf{Vec}(\X_{K,:,:})]$ 
+ 
+ \subsection{Tucker decomposition}
+ Tucker decomposition is a basic model for tensor decomposition which allows to perform effectively the tasks of data compression and subspaces recovery. Using the notations introduced above, the classical form of Tucker decomposition for a three-order tensor is mathematically defined as follows:\\
+ $\X=\G\times_{1}A^{(1)}\times_{2}A^{(2)}\times_{3}A^{(3)}$\\
+ $\X_{i_{1},i_{2},i_{3}}=\sum_{j_{1},j_{2},j_{3}}\G_{j_{1},j_{2},j_{3}}A^{(1)}_{i_{1},j_{1}}A^{(2)}_{i_{2},j_{2}}A^{(3)}_{i_{3},j_{3}}$\\
+ with: $\X \in \mathbb{R}^{I_{1}\times I_{2} \times I_{3}},\G \in \mathbb{R}^{J_{1}\times J_{2}.\times J_{3}},A^{(n)}\in \mathbb{R}^{I_{n}\times J_{n}}$.
+ 
+ The tensor $\G$ is called the core tensor and the matrices $A^{(n)}$ are the loading matrices.\\
+ This decomposition is not unique in general. In order to recover meaningful and unique representation  by Tucker decomposition, we generally impose some constraints orthogonality, nonnegativity, sparsity..on loading matrices and the core tensor. Several efficient algorithms exist for the inference of the core tensor tensor and the loading matrices depending on the constraints imposed,e.g: for orthogonality constraints, we have for example HOSVD (High Order Singular Value Decomposition) and HOOI (High Order Orthogonal Iterations) which roughtly speaking, perform the decomposition by computing the singular value decomposition of the matricized forms, for positivity constraints, an example of algorithm the so-called $\alpha$-NTD whict tries to make the decomposition by minimizing a $\alpha-$divergence cost function.
+ \section{Dictionary learning problem}
+ 
+ \subsection{Brief Overview}
+ The objective of the classical dictionary learning problem is to understand and observed vector sample $\mathbf{y}\in\mathbb{R}^{n}$ by representing it as linear combination of dictionary elements. Precisely, the goal is to find an unknown matrix $\A\in\mathbb{R}^{n\times m}$ and a sparse vector $\mathbf{x}\in\mathbb{R}^{m}$ such that $\mathbf{y}\approx \A\mathbf{x}$. This problem has been intensively studied with applications in audio processing\cite{DictionaryOverview}, face recognition\cite{DictionaryOverview}, image compression\cite{DictionaryOverview}, image denoising\cite{DictionaryOverview}.\\
+ In recent years, there has been an increasing interest in tensor decomposition for multi-modal data processing purpose with scores of applications such as EEG data classification\cite{TensorDictionary2},image reconstruction\cite{TensorDictionary2} and some extensions of classical dictionary learning methods have been proposed(see \cite{TensorDictionary2,TensorDictionry1,TDL2}). 
+ 
+ \subsection{Supervised Tucker2 dictionary learning (NNT2D)}
+ The goal is to find $\G,\A_{f},\A_{t}$ by solving the following problem:
+\\ 
+$\min \underbrace{ \mathcal{F}(\G,\A_{f},\A_{t})}_{\text{Fidelity term}}+\lambda \underbrace{\xi(\G,\B_{f},\B_{t})}_{\text{Penalty}}$\\
+w.r.t $\G\geq 0,\A_{f}\in \mathcal{D}_{I_{f}\times J_{f}},\A_{t}\in \mathcal{D}_{I_{t}\times J_{t}},\B_{f}\in \mathcal{D}_{I_{f}\times I_{f}},\B_{t}\in \mathcal{D}_{I_{t}\times I_{t}}$\\
+ The fidelity term aims at performing the Tucker2 decomposition with positivity constraints on both the core tensor and the spectral and temporal dictionaries and the penalty term aims at coercing the core tensor to be aligned with the information tensor.\\
+ For the two functions, we chose euclidean divergence. Hence, their expressions are given by:\\
+$$
+\begin{aligned}
+\mathcal{F}(\G,\A_{f},\A_{t}) &=\| \X - \G \times_1 I \times_2 \A_f  \times_3 \A_t \|_{\F}^2(1)\\
+&=\| \X^{(2)} - \A_f \G^{(2)}(\A_t\otimes I)^{T} \|_{\F}^2(2)\\
+&=\| \X^{(3)} - \A_t \G^{(3)}(\A_f\otimes I)^{T} \|_{\F}^2(3)\\
+&=\| \textbf{Vec}(\X)-(I\otimes \A_t \otimes\A_f)\textbf{Vec}(\G)\|_{\F}^2(4)
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\xi(\G,\B_{f},\B_{t})&=\| \C - \G \times_1 I \times_2 \B_s \times_3 \B_f \|_{\F}^2.(5)\\
+&=\| \C^{(2)} - \B_f \G^{(2)}(\B_t\otimes I)^{T} \|_{\F}^2(6)\\
+&=\| \C^{(3)} - \B_t \G^{(3)}(\B_f\otimes I)^{T} \|_{\F}^2(7)\\
+&=\| \textbf{Vec}(\C)-(I\otimes \B_t \otimes \B_f)\textbf{Vec}(\G)\|_{\F}^2(8)
+\end{aligned}
+$$
+\subsubsection{Sub-subheadings}
+\label{sssec:subsubhead}
+ 
+ % Below is an example of how to insert images. Delete the ``\vspace'' line,
+ % uncomment the preceding line ``\centerline...'' and replace ``imageX.ps''
+ % with a suitable PostScript file name.
+ % -------------------------------------------------------------------------
+ %\begin{figure}[htb]
+ %
+ %\begin{minipage}[b]{1.0\linewidth}
+ %  \centering
+ %  \centerline{\includegraphics[width=8.5cm]{image1}}
+ %%  \vspace{2.0cm}
+ %  \centerline{(a) Result 1}\medskip
+ %\end{minipage}
+ %%
+ %\begin{minipage}[b]{.48\linewidth}
+ %  \centering
+ %  \centerline{\includegraphics[width=4.0cm]{image3}}
+ %%  \vspace{1.5cm}
+ %  \centerline{(b) Results 3}\medskip
+ %\end{minipage}
+ %\hfill
+ %\begin{minipage}[b]{0.48\linewidth}
+ %  \centering
+ %  \centerline{\includegraphics[width=4.0cm]{image4}}
+ %%  \vspace{1.5cm}
+ %  \centerline{(c) Result 4}\medskip
+ %\end{minipage}
+ %%
+ %\caption{Example of placing a figure with experimental results.}
+ %\label{fig:res}
+ %%
+ %\end{figure}
+ 
+ \section{REFERENCES}
+ \label{sec:refs}
+ 
+ % References should be produced using the bibtex program from suitable
+ % BiBTeX files (here: strings, refs, manuals). The IEEEbib.bst bibliography
+ % style file from IEEE produces unsorted bibliography list.
+ % -------------------------------------------------------------------------
+ \bibliographystyle{IEEEbib}
+ \bibliography{strings,refs}
+ 
+ \end{document}

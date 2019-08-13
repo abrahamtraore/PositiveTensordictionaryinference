@@ -1,0 +1,159 @@
+\documentclass{article}
+\usepackage{amssymb,euler,amsbsy,slashed}
+\usepackage[latin1]{inputenc} 
+\usepackage[francais]{babel}
+\usepackage{amsmath}
+%\setcounter{tocdepth}{3}
+\usepackage{graphicx}
+\usepackage{color}
+
+\def\G{\boldsymbol{{\mathscr G}}}
+\def\X{\boldsymbol{{\mathscr X}}}
+\def\E{\boldsymbol{{\mathscr E}}}
+
+\def\A{\mathbf{A}}
+
+\title{Algo de nnTF par Phan et Cichocki (2011)}
+\begin{document}
+\maketitle
+
+Remarque : l'algorithme n'est pas donné en tant que tel mais une suite de régularisations est listée
+\cite{PHAN2011}.\\
+
+\section{Algo non regularisé}
+Decomposition de Tucker sous contraintes de positivité
+$$
+\X = \G \times \lbrace \A \rbrace + \E
+$$
+avec $\E$ le tenseur résidu. Le problème de décomposition
+$$
+\min \| \E \|_{\mathcal{F}}^2 \quad s.t.\quad  \forall n \quad \A^{(n)} \geq 0, \G \geq 0
+$$
+
+Règle de mise-à-jour (ALS) de $\A$: 
+$$
+\A^{(n)} \leftarrow \left[ 
+\langle \X, \G \times_{\slashed{n}} \lbrace \A \rbrace\rangle_{n}
+\langle  \G \times_{\slashed{n}} \lbrace \A \rbrace,\G \times_{\slashed{n}} \lbrace \A \rbrace
+ \rbrace\rangle_{n}^{-1}
+\right]_{+}
+$$
+avec $ \times_{\slashed{n}}$ notant un produit tenseur/matrice sur tous les modes sauf $n$, et
+$\langle \boldsymbol{\mathscr{S}},\boldsymbol{\mathscr{T}} \rangle_{n}
+=\boldsymbol{\mathscr{S}}_{(n)}^\top \boldsymbol{\mathscr{T}}_{(n)}
+$ notant un
+produit scalaire de leur forme matricisée.
+
+
+Remarque : 
+\begin{itemize}
+\item ce n'est pas exactement un ALS, qui résolverait chaque problème avec contraintes successivement
+\item coût de l'inversion de la matrice centrale ...
+\end{itemize}
+\vspace{2.0em}
+Règle de mise à jour de $\G$ : 
+$$
+\text{vec}{\X} = \left(
+\A^{(N)} \otimes \cdots \otimes \A^{(1)} 
+\right) \text{vec}{\G}
+$$
+tout algorithme de capable de traiter ce système sous-contrainte
+\subsection{hALS}
+Réécriture isolant une colonne d'un des dictionnaires, passe par la décomposition du tenseur noyau entre les parties impactés par cet élément
+$$
+\X = \G_{j \neq i} \times_{\slashed{n}} \lbrace \mathbf{A} \rbrace \times_n \mathbf{A}^{(n)}_{j \neq i}
++\G_i \times_{\slashed{n}} \lbrace \mathbf{A} \rbrace \times_n \mathbf{a}^{(n)}_{i} + \E
+$$
+avec 
+$\G_i$ le sous-tenseur où la composante du mode $(n)$ est fixée à $i$, $\G_{j \neq i}$ le sous-tenseur complémentaire. On s'intéresse au problème
+$$
+\X - \G_{j \neq i} \times_{\slashed{n}} \lbrace \mathbf{A} \rbrace \times_n \mathbf{A}^{(n)}_{j \neq i}
+= \tilde{\X}
+=\G_i \times_{\slashed{n}} \lbrace \mathbf{A} \rbrace \times_n \mathbf{a}^{(n)}_{i} + \E
+$$
+
+Après avoir remarqué que chaque colonne peut être traitée séparément
+$$
+\mathbf{a}^{(n)}_i \leftarrow \left[ 
+\frac{
+\langle \tilde{\X}, \G_i \times_{\slashed{n}} \lbrace \A \rbrace \rangle_{n}
+}{
+\langle  \G_i \times_{\slashed{n}} \lbrace \A \rbrace,
+\G_i \times_{\slashed{n}} \lbrace \A \rbrace \rangle_{n}
+}
+\right]_{+}
+$$
+Remarque : nécessite le recalcul de $\tilde{\X}$ avant chaque étape, on réintroduit $\tilde{\X} = \E +\G_i \times_{\slashed{n}} \lbrace \mathbf{A} \rbrace \times_n \mathbf{a}_i^{(n)}$
+
+\begin{align*}
+\mathbf{a}^{(n)}_i &\leftarrow \left[ 
+\frac{
+\langle \G_i \times_{\slashed{n}} \lbrace \mathbf{A} \rbrace \times_n \mathbf{a}_i^{(n)}, \G_i \times_{\slashed{n}} \lbrace \A \rbrace \rangle_{n}
++
+\langle \E, \G_i \times_{\slashed{n}} \lbrace \A \rbrace \rangle_{n}
+}{
+\langle  \G_i \times_{\slashed{n}} \lbrace \A \rbrace,
+\G_i \times_{\slashed{n}} \lbrace \A \rbrace \rangle_{n}
+}
+\right]_{+}\\
+&\leftarrow 
+\left[
+\mathbf{a}^{(n)}_i + \frac{
+\langle \E, \G_i \times_{\slashed{n}} \lbrace \A \rbrace \rangle_{n}
+}{
+\langle  \G_i \times_{\slashed{n}} \lbrace \A \rbrace,
+\G_i \times_{\slashed{n}} \lbrace \A \rbrace \rangle_{n}
+}
+\right]_{+}
+\end{align*}
+et le tenseur de résidus $\E$ est mis-à-jour
+$$
+\E \leftarrow \E + \G_i \times_{\slashed{n}} \lbrace \A \rbrace \times_n \left(\mathbf{a}^{(n)}_{i,t}
+-
+\mathbf{a}^{(n)}_{i,t+1} \right) 
+$$
+
+\subsection{Règle locale pour $\G$}
+passe par séparer à nouveau le tenseur entre une composante de $\G$, $\mathbf{i} = i_1,\cdots,i_N$  
+
+$$
+\X - \G_{\mathbf{j} \neq \mathbf{i}}
+= g_{\mathbf{i}} \times \lbrace \mathbf{a}_{(i)} \rbrace + \E
+$$
+ce qui donne
+$$
+g_{\mathbf{i}}  \leftarrow 
+\left[
+g_{\mathbf{i}}  + \E \times \lbrace \frac{\mathbf{a}_{(i)}^\top}{\mathbf{a}_{(i)}^\top \mathbf{a}_{(i)}} \rbrace
+\right]_{+}
+$$
+Remarque : le problème sur la pseudo-inverse de $\mathbf{a}_{(i)}$ est contourné en contraignant les atomes des dictionnaires à être de norme 1.
+et une règle de màj de $\E$
+$$
+\E \leftarrow \E + (g_{\mathbf{i}}^t - g_{\mathbf{i}}^{t+1})\circ \mathbf{a}^{(1)}_{i_1}\circ \cdots \circ \mathbf{a}^{(N)}_{i_N}
+$$
+
+\subsection{Algo}
+
+L'algo enchaîne les régularisation des différents $\mathbf{a}^{(n)}_{i}$ puis des éléments $g_{\mathbf{i}}$
+
+\section{regularisation}
+La régularisation s'inspire du LDA, pour cela on définit des matrices de dispersion inter et intra-classes:
+\begin{align*}
+&\text{tr}\left( \mathbf{S}_w \right) = \sum_{1}^{I_N}
+\| \mathbf{F} - \mathbf{F}^{c_k}\|_F^2 = \text{tr}\left( \mathbf{A}^\top \mathbf{S}_w \mathbf{A} \right)\\
+&\text{tr}\left( \mathbf{S}_b \right) = \sum_{1}^{I_N} K_k
+\| \mathbf{F}^{c_k} - \mathbf{F}^{c}\|_F^2 = \text{tr}\left( \mathbf{A}^\top \mathbf{S}_b \mathbf{A} \right)\\
+&J( \mathbf{A}) = \frac{\alpha_w}{2} \text{tr}\left( \mathbf{S}_w \right) - \frac{\alpha_b}{2} \text{tr}\left( \mathbf{S}_b \right)
+\end{align*}
+et correspond à la mise à jour suivante :
+$$
+\mathbf{a}^n_{j_n} \leftarrow \left[\mathbf{a}^n_{j_n} + \frac{\langle \mathbf{E},\mathbf{G}_{k_n = j_n}\times_n \mathbf{A}\rangle_n +\mathbf{S} \mathbf{a}^n_{j_n}}{w_{jn}}\right]_{+} 
+$$
+
+
+
+\bibliographystyle{IEEEbib}
+\bibliography{nntf_CICHOCKI}
+\end{document}
+

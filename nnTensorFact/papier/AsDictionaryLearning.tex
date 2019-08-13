@@ -1,0 +1,100 @@
+\documentclass{article}
+\usepackage{amssymb,euler,amsbsy}
+\usepackage[latin1]{inputenc}
+\usepackage[francais]{babel}
+\usepackage{amsmath}
+%\setcounter{tocdepth}{3}
+\usepackage{graphicx}
+\usepackage{color}
+
+
+\begin{document}
+\title{Equivalence entre apprentissage de dictionnaire et decomposition de tenseurs}
+
+\maketitle
+
+
+
+
+Tous les scalaires, vecteurs, matrices, tenseurs sont positifs ou nuls.\\
+
+
+\section{Apprentissage de dictionnaire}
+
+On dispose de $n$ representations temps-frequences d'exemples :
+$$
+\mathbf{X}_i \in \mathbb{R}_+^{I_f \times I_t} 
+$$
+on cherche a les decomposer sous la forme d'elements d'un dictionnaire $\mathbf{D}$
+(qui peut etre connu ou appris) de $N$ atomes.
+
+
+Si ces atomes sont des images TF: 
+$$
+\min_{\mathbf{D}_j,a_i}  \sum_{i=1}^n \|\mathbf{X}_i - \sum_j^{N} \mathbf{D}_j a_{i,j} \|_{F}^2
+$$
+et les $a_{i,j}$ correspondent a l'activation d'elements du dictionnaire lies a l'exemple $i$.
+
+Si ces atomes correspondent a un ensemble de $N$ ditributions sur le spectre ($\mathbf{d}_j \in \mathbf{R}_+^{I_f}$), le probleme se reformule
+sous la forme d'une factorisation de matrice non-negative
+$$
+\min_{\mathbf{D},\mathbf{A}_i} \sum_{i=1}^n \|\mathbf{X}_i -  \mathbf{D} \mathbf{A}_i \|_{F}^2
+$$
+avec la matrice $\mathbf{D} \in \mathbf{R}_+^{I_f \times N}$ regroupant les elements du dictionnaire.
+
+Le dictionaire etant commun a l'ensemble des exemples traites, on peut reecrire le probleme en concatenant les exemples
+les uns a la suite des autres dans le sens du temps
+$$
+\min_{\mathbf{D},\mathbf{A}^{(e)}}  \|\mathbf{X}^{(e)} -  \mathbf{D} \mathbf{A}^{(e)} \|_{F}^2
+$$
+On perd cependant l'ajancement temporel des exemples (echanger des colonnes de $\mathbf{A}^{(e)}$).
+
+
+Cette operation de concatenation des exemples les uns a la suite des autres est celle de la matricisation du tenseur $\mathcal{X} \in \mathbb{R}_+^{I_f \times I_t \times I_e}$, on peut donc comparer
+le probleme d'apprentissage de dictionnaire (NMF) a celui de decomposition de Tucker nonneg.
+
+
+\section{Decomposition tensorielle}
+
+La decomposition de Tucker cherche a reecrire un tenseur sous la forme du produit entre un tenseur-noyau $\mathcal{G}$ et de matrices (loading factors)$\mathbf{A}$
+$$
+\min \|\mathcal{X} -  \mathcal{G} \times_f \mathbf{A}_f \times_t \mathbf{A}_t \times_e \mathbf{A}_e   \|_{F}^2
+$$
+Pour se replacer dans le contexte precedent et eviter la confusion, on adoptera les notations suivantes
+$$
+\min \|\mathcal{X} -  \mathcal{A} \times_f \mathbf{D}_f \times_t \mathbf{D}_t \times_e \mathbf{D}_e   \|_{F}^2
+$$
+Cette minimisation peut se reecrire sous 3 formes matricisees, voici la mode-1, qui correspond a l'operation de concatenation des exemples
+$$
+\min \|\mathcal{X}^{(e)} -  \mathbf{D}_f \times  \mathcal{A}^{(e)} \left( \mathbf{D}_t \otimes \mathbf{D}_e \right)^\top  \|_{F}^2
+$$
+
+
+Dans le cadre de Tucker-2, la dimension des exemples n'est pas modifiee (on ne melange pas les exemples), $\mathbf{D}_e=\mathbf{I}_e$
+$$
+\min \|\mathcal{X}^{(e)} -  \mathbf{D}_f \times  \mathcal{A}^{(e)} \left( \mathbf{D}_t \otimes \mathbf{I}_e \right)^\top  \|_{F}^2
+$$
+
+\section{Equivalence}
+
+Si l'on revient au probleme de dictionaire precedent
+$$
+\min_{\mathbf{D},\mathbf{A}^{(e)}}  \|\mathbf{X}^{(e)} -  \mathbf{D} \mathbf{A}^{(e)} \|_{F}^2
+$$
+on assiste a la reecriture de la matrice d'activation 
+$$
+ \mathbf{A}^{(e)}=\mathcal{A}^{(e)} \left( \mathbf{D}_t \otimes \mathbf{I}_e \right)^\top
+$$
+comme un produit incluant des elements de dictionnaires temporels.
+
+In fine chaque exemple se decompose ainsi
+$$
+\mathbf{X}_i  \approx \mathbf{D}_f \mathcal{A}_{:,:,i}  \mathbf{D}_t 
+$$
+la decomposition tensorielle a fait apparaitre des elements structurant dans le temps
+
+
+
+Si on restreint $\mathbf{D}_t = \mathbf{I}_t$, les problemes sont equivalents
+
+\end{document}
